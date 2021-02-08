@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import csv
 
 # url_input = input("Veuillez entrer l'URL de la première page de la catégorie: ")
 url_input = 'https://books.toscrape.com/catalogue/category/books/young-adult_21/page-1.html'
@@ -72,10 +73,22 @@ def scrape_book_info(url_list, info_list):
                          'product_description': product_description.text,
                          'category': category.text.strip(),
                          'review_rating': (review_rating[1].lower() + ' out of five'),
-                         'image_url: ': image_url.replace('../../', 'https://books.toscrape.com/')
+                         'image_url': image_url.replace('../../', 'https://books.toscrape.com/')
                          }
 
             info_list.append(info_dict)
 
+            filename = info_dict['category'].replace(' ', '') + '.csv'
+            with open(filename, 'w') as file:
+                #for index in info_dict:
+                #    file.write(index)
+                fieldnames = ('product_page_url', 'universal_product_code (upc)', 'title',
+                              'price_including_tax', 'price_excluding_tax', 'number_available', 'product_description',
+                              'category', 'review_rating', 'image_url')
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                writer.writeheader()
+                for entry in info_list:
+                    writer.writerow(entry)
+# 2 problems : only first entry is taken and encoding problem (maybe linked)
 
 scrape_book_info(cat_book_urls, book_data_list)
