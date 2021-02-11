@@ -27,12 +27,12 @@
         pip install -r P2_00_requirements.txt
 
 
-2.  Exécutez le script P2_01_scrape_cat_urls.py
+2.  Exécutez le script P2_01_codesource.py
 
 Ce script va automatiquement prélever toutes les url des différentes catégories de livres du site bookstoscrape.com, et les enregistrer dans un fichier nommé all_categories_urls.csv
 
 
-3.  Exécutez le script P2_02_scrape_all_book_info.py \n
+3.  Exécutez le script P2_02_codesource.py \n
 
     Saisissez l'url d'une catégorie issue du fichier all_categories_urls.csv comme demandé dans le script.
 
