@@ -1,49 +1,56 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
+import shutil
 
 # url_input = input("Veuillez entrer l'URL de la première page de la catégorie: ")
-url_input = 'https://books.toscrape.com/catalogue/category/books/young-adult_21/page-1.html'
+url_input = 'https://books.toscrape.com/catalogue/category/books/romance_8/index.html'
+all_pages_for_cat = []
 cat_book_urls = []
 book_data_list = []
+info_dict = {}
 
 
-def scrape_book_urls(url, url_list):
-    cat_book_urls = url_list
+def get_next_page_url(url):
     response = requests.get(url)
-    soup = BeautifulSoup(response.text, features="html.parser")
+    soup = BeautifulSoup(response.text, features='html.parser')
 
     if response.ok:
-        page_book_urls_raw = soup.find('ol', class_='row').find_all('a')
-
-        j = 0
-        # prélève les url de livres dans une page de cat
-        while j < len(page_book_urls_raw):
-            extracted_url = page_book_urls_raw[j].get('href')
-            url_in = extracted_url.replace('../../../', 'https://books.toscrape.com/catalogue/')
-            cat_book_urls.append(url_in)
-            j += 2
-
+        all_pages_for_cat.append(url)
         next_page = soup.find('li', class_='next')
         if next_page:
             next_page_url = next_page.a.get('href')
             url_to_change = url.split('/')
             url_to_change[-1] = next_page_url
             url_new = '/'.join(url_to_change)
-            cat_book_urls += scrape_book_urls(url_new, cat_book_urls)
-        # else:
-        #    print('cat_book_urls', cat_book_urls)
+            get_next_page_url(url_new)
+    return all_pages_for_cat
+
+
+get_next_page_url(url_input)
+# print(all_pages_for_cat)
+
+
+def scrape_book_urls():
+
+    for url in all_pages_for_cat:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, features='html.parser')
+        if response.ok:
+            url_list_raw = soup.find('ol', class_='row').find_all('a')
+
+            j = 0
+            while j < len(url_list_raw):
+                extracted_url = url_list_raw[j].get('href')
+                url_in = extracted_url.replace('../../../', 'https://books.toscrape.com/catalogue/')
+                cat_book_urls.append(url_in)
+                j += 2
 
     return cat_book_urls
 
 
-scrape_book_urls(url_input, [])
-
-# PROBLEME: Appeler la valeur de cat_book_urls retournée par scrape_book_urls
-
-cat_book_urls = ['https://books.toscrape.com/catalogue/girl-online-on-tour-girl-online-2_101/index.html',
-                 'https://books.toscrape.com/catalogue/the-haters_67/index.html',
-                 'https://books.toscrape.com/catalogue/the-art-of-not-breathing_58/index.html']
+scrape_book_urls()
+# print(cat_book_urls)
 
 
 def scrape_book_info(url_list, info_list):
@@ -78,17 +85,41 @@ def scrape_book_info(url_list, info_list):
 
             info_list.append(info_dict)
 
-            filename = info_dict['category'].replace(' ', '') + '.csv'
-            with open(filename, 'w') as file:
-                #for index in info_dict:
-                #    file.write(index)
-                fieldnames = ('product_page_url', 'universal_product_code (upc)', 'title',
-                              'price_including_tax', 'price_excluding_tax', 'number_available', 'product_description',
-                              'category', 'review_rating', 'image_url')
-                writer = csv.DictWriter(file, fieldnames=fieldnames)
-                writer.writeheader()
-                for entry in info_list:
-                    writer.writerow(entry)
+    return info_list
+
+
+'''
+scrape_book_info(cat_book_urls, book_data_list)
+# print(book_data_list)
+
+#def create_book_info_file(info_dict):
+filename = info_dict['category'].replace(' ', '') + '.csv'
+with open(filename, 'w') as file:
+    #for index in info_dict:
+    #    file.write(index)
+    fieldnames = ('product_page_url', 'universal_product_code (upc)', 'title',
+                  'price_including_tax', 'price_excluding_tax', 'number_available', 'product_description',
+                  'category', 'review_rating', 'image_url')
+    writer = csv.DictWriter(file, fieldnames=fieldnames)
+    writer.writeheader()
+    for entry in book_data_list:
+        writer.writerow(entry)
+
 # 2 problems : only first entry is taken and encoding problem (maybe linked)
 
-scrape_book_info(cat_book_urls, book_data_list)
+#create_book_info_file(info_dict)
+
+def dl_book_covers(info_list):
+
+    image_url_list = []
+    for entry in info_list:
+        r = requests.get(entry['image_url'], stream=True)
+        r.raw.decode_content = True
+        filename = entry['title'].replace(' ','')
+        with open(filename, 'wb') as file:
+            shutil.copyfileobj(r.raw, file)
+    #print(image_url_list)
+
+
+# dl_book_covers(book_data_list)
+'''
