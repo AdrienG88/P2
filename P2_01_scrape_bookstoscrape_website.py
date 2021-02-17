@@ -10,22 +10,21 @@ cat_book_urls = []
 info_dict = {}
 
 
-def scrape_categories_url(url):
+def scrape_categories_urls(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, features="html.parser")
 
     if response.ok:
         cat_soup = soup.find('ul', class_='nav nav-list').find_all('a')
-        i = 1
         cat_links = []
-        while i < len(cat_soup):
+        for i in range(1, len(cat_soup), 1):
             extracted_link = cat_soup[i].get('href')
             link = extracted_link.replace('catalogue/', 'https://books.toscrape.com/catalogue/')
             cat_links.append(link)
-            i += 1
+
         return cat_links
 
-# scrape_categories_url()
+# scrape_categories_urls()
 # cat_links = scrape_categories_url()
 
 
@@ -58,12 +57,10 @@ def scrape_book_urls():
         if response.ok:
             url_list_raw = soup.find('ol', class_='row').find_all('a')
 
-            j = 0
-            while j < len(url_list_raw):
+            for j in range(0, len(url_list_raw), 2):
                 extracted_url = url_list_raw[j].get('href')
                 url_in = extracted_url.replace('../../../', 'https://books.toscrape.com/catalogue/')
                 cat_book_urls.append(url_in)
-                j += 2
 
     return cat_book_urls
 
@@ -137,12 +134,11 @@ def dl_book_covers(info_list):
 
 
 def one_script_to_run_them_all(url):
-    scrape_categories_url(url)
-    cat_links = scrape_categories_url(url)
-    for link in cat_links:
+    cat_links = scrape_categories_urls(url)
 
+    for link in cat_links:
         get_next_page_url(link)
-        print(all_pages_for_cat)
+        print('all_pages_for_cat', all_pages_for_cat)
 '''        scrape_book_urls()
 
         scrape_book_info(cat_book_urls)
