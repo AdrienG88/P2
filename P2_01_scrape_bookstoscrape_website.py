@@ -39,15 +39,14 @@ def get_next_page_urls(url):
     return cat_all_urls
 
 
-f_lst = []
-def flatten_list(lst):
+def flatten_list(lst, f_lst):
     tmp_lst = []
     for elt in lst:
         if type(elt) == list:
             tmp_lst.append(elt)
             f_lst.append(tmp_lst[0])
             tmp_lst.pop()
-            flatten_list(elt)
+            flatten_list(elt, f_lst)
         else:
             tmp_lst.append(elt)
             f_lst.append(tmp_lst[0])
@@ -132,18 +131,19 @@ def one_loop_to_run_them_all(current_scraped_page):
     all_pages_for_cat = get_next_page_urls(current_scraped_page)
     print('all_pages_for_cat: ', all_pages_for_cat)
 
-    flat_all_pages_for_cat = flatten_list(all_pages_for_cat)
+    f_lst = []
+    flat_all_pages_for_cat = flatten_list(all_pages_for_cat, f_lst)
     print('flat_all_pages_for_cat: ', flat_all_pages_for_cat)
 
     cat_book_urls = scrape_book_urls(flat_all_pages_for_cat)
     print('cat_book_urls: ', cat_book_urls)
-'''
+
     book_data_list = scrape_book_info(cat_book_urls)
 
     create_book_info_file(book_data_list)
     create_book_covers_dir(book_data_list)
     dl_book_covers(book_data_list)
-'''
+
 
 def one_script_to_run_them_all(url):
     cat_links = scrape_categories_urls(url)
