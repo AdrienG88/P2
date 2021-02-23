@@ -10,16 +10,21 @@ url_main_page = 'https://books.toscrape.com/index.html'
 def scrape_categories_urls(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, features="html.parser")
-
+    cat_urls = []
     if response.ok:
         cat_soup = soup.find('ul', class_='nav nav-list').find_all('a')
-        cat_urls = []
         for i in range(1, len(cat_soup), 1):
             extracted_link = cat_soup[i].get('href')
             link = extracted_link.replace('catalogue/', 'https://books.toscrape.com/catalogue/')
             cat_urls.append(link)
 
     return cat_urls
+
+
+def create_master_dir():
+    path = 'BooksToScrape_Data'
+    if not os.path.isdir(path):
+        os.mkdir(path)
 
 
 def get_next_page_urls(url):
@@ -62,7 +67,6 @@ def scrape_book_urls(url_list):
         soup = BeautifulSoup(response.text, features='html.parser')
         if response.ok:
             url_list_raw = soup.find('ol', class_='row').find_all('a')
-
             for j in range(0, len(url_list_raw), 2):
                 extracted_url = url_list_raw[j].get('href')
                 url_in = extracted_url.replace('../../../', 'https://books.toscrape.com/catalogue/')
@@ -76,7 +80,6 @@ def scrape_book_info(url_list):
     for url in url_list:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, features="html.parser")
-
         if response.ok:
             product_page_url = url
             upc = soup.find('th', string='UPC').next_sibling
@@ -108,35 +111,38 @@ def scrape_book_info(url_list):
 
 def create_book_info_file(info_list):
     my_frame = pd.DataFrame(info_list)
-    filename = info_list[0]['category'].replace(' ', '') + '.csv'
-    my_frame.to_csv(filename, index=False)
+    filename = 'BooksToScrape_Data/' + info_list[0]['category'].replace(' ', '') + '.csv'
+    if not os.path.isfile(filename):
+        my_frame.to_csv(filename, index=False)
 
 
 def create_book_covers_dir(info_list):
-    path = info_list[0]['category'].replace(' ', '') + '_book_covers'
-    os.mkdir(path)
+    path = 'BooksToScrape_Data/' + info_list[0]['category'].replace(' ', '') + '_book_covers'
+    if not os.path.isdir(path):
+        os.mkdir(path)
 
 
 def dl_book_covers(info_list):
     for entry in info_list:
         r = requests.get(entry['image_url'], stream=True)
         r.raw.decode_content = True
-        filename = info_list[0]['category'].replace(' ', '') + '_book_covers' + '/' + (entry['image_url'].split('/'))[-1]
-        with open(filename, 'wb') as file:
-            shutil.copyfileobj(r.raw, file)
+        filename = 'BooksToScrape_Data/' + info_list[0]['category'].replace(' ', '') + '_book_covers' + '/'\
+                   + (entry['image_url'].split('/'))[-1]
+        if not os.path.isfile(filename):
+            with open(filename, 'wb') as file:
+                shutil.copyfileobj(r.raw, file)
 
 
 def one_loop_to_run_them_all(current_scraped_page):
 
     all_pages_for_cat = get_next_page_urls(current_scraped_page)
-    print('all_pages_for_cat: ', all_pages_for_cat)
 
     f_lst = []
     flat_all_pages_for_cat = flatten_list(all_pages_for_cat, f_lst)
-    print('flat_all_pages_for_cat: ', flat_all_pages_for_cat)
+    print('FLAT_ALL_PAGES_FOR_CAT: ', flat_all_pages_for_cat)
 
     cat_book_urls = scrape_book_urls(flat_all_pages_for_cat)
-    print('cat_book_urls: ', cat_book_urls)
+    print('CAT_BOOK_URLS: ', cat_book_urls)
 
     book_data_list = scrape_book_info(cat_book_urls)
 
@@ -147,11 +153,10 @@ def one_loop_to_run_them_all(current_scraped_page):
 
 def one_script_to_run_them_all(url):
     cat_links = scrape_categories_urls(url)
+    create_master_dir()
 
     for link in cat_links:
         one_loop_to_run_them_all(link)
-
-    # python P2_01_scrape_bookstoscrape_website.py
 
 
 one_script_to_run_them_all(url_main_page)
